@@ -36,6 +36,18 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'accounts.apps.AccountsConfig',
+    'academic',
+    'classes',
+    'subject',
+    'teachers',
+    'students',
+    'admins',
+    'grading',
+    'schedules',
+    'communication',
+    'attendance',
+    'contents',
 ]
 
 MIDDLEWARE = [
@@ -49,6 +61,10 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'Schoolo.urls'
+
+
+AUTH_USER_MODEL = 'accounts.User'
+
 
 TEMPLATES = [
     {
@@ -74,9 +90,19 @@ WSGI_APPLICATION = 'Schoolo.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'schoolo2',  
+        'USER': 'nouran',  
+        'PASSWORD': 'nourankandar',  
+        'HOST': 'localhost',          
+        'PORT': '3306',   
+
+        'OPTIONS': {
+            'charset': 'utf8mb4', 
+        },
+        'CONN_MAX_AGE': 600,           
     }
+    
 }
 
 
