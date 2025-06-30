@@ -2,7 +2,6 @@ from rest_framework import viewsets, status, mixins
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework import permissions 
-from academic.views import IsSuperUser
 from .models import Class, Section
 from .serializers import ClassSerializer, SectionSerializer
 

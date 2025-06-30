@@ -49,3 +49,32 @@ class AcademicTerm(AutoCreateAndAutoUpdateTimeStampedModel):
         super().save(*args, **kwargs)
 
 
+class TimeSlot(models.Model):
+    slot_number = models.IntegerField(unique=True, help_text=_('الترتيب التسلسلي للحصة/الفترة في اليوم (مثال: 1, 2, 3...)'))
+    start_time = models.TimeField(help_text=_('وقت بدء الفترة الزمنية (مثال: 08:00)'))
+    end_time = models.TimeField(help_text=_('وقت انتهاء الفترة الزمنية (مثال: 08:45)'))
+    is_break = models.BooleanField(default=False, help_text=_('هل هذه الفترة استراحة وليست حصة دراسية؟'))
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['slot_number']
+        verbose_name = _("الفترة الزمنية للحصة") 
+        verbose_name_plural = _("الفترات الزمنية للحصص") 
+
+    def __str__(self):
+       
+        return f"Slot {self.slot_number}: {self.start_time.strftime('%H:%M')} - {self.end_time.strftime('%H:%M')}"
+
+class DayOfWeek(models.Model):
+    id = models.IntegerField(primary_key=True, help_text=_('1=الأحد, 2=الاثنين, ..., 7=السبت'))
+    name_ar = models.CharField(max_length=20, unique=True, help_text=_('اسم اليوم  (مثال: الأحد)'))
+    is_school_day = models.BooleanField(default=True, help_text=_('هل هذا اليوم يوم دراسي عادي؟ (للسماح بالعطلات)'))
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['id']
+        verbose_name = _("يوم الأسبوع") 
+        verbose_name_plural = _("أيام الأسبوع") 
+
+    def __str__(self):
+        return self.name_ar

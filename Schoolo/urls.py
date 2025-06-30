@@ -18,9 +18,12 @@ from django.contrib import admin
 from django.urls import path,include
 
 urlpatterns = [
-       path('admin/', admin.site.urls),
-       path('api/academic/', include('academic.urls')),
-       path('api/class/', include('classes.urls')),
-       path('api/accounts/', include('accounts.urls')),
-       path('api/students/', include('students.urls')),
+    path('admin/', admin.site.urls),
+    path('api/academic/', include('academic.urls')),
+    path('api/class/', include('classes.urls')),
+    path('api/accounts/', include('accounts.urls')),
+    path('api/students/', include('students.urls')),
+    path('api/enrollment/', include('enrollment.urls')),
+    
+
 ]

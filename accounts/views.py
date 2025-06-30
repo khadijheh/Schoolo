@@ -9,7 +9,8 @@ from django.db import transaction
 from django.utils.translation import gettext_lazy as _
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.views import APIView
-
+from rest_framework.permissions import IsAuthenticated
+from .permissions import *
 
 logger = logging.getLogger(__name__)
 
@@ -19,16 +20,27 @@ class StudentRegistrationView(generics.CreateAPIView):
     permission_classes = [AllowAny]
 
     def create(self, request, *args, **kwargs):
+        try:
+            registration_setting = RegistrationSetting.objects.get(pk=1)
+            if not registration_setting.is_registration_open:
+                return Response(
+                    {"detail": _("التسجيل مغلق حالياً. الرجاء المحاولة في وقت لاحق.")},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        except RegistrationSetting.DoesNotExist:
+            logger.error("GlobalRegistrationSetting does not exist. Please create it in Django Admin or check AppConfig.")
+            return Response(
+                {"detail": _("حدث خطأ في النظام: إعدادات التسجيل غير متوفرة. الرجاء التواصل مع الإدارة.")},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
         with transaction.atomic():
             try:
                 serializer = self.get_serializer(data=request.data)
                 serializer.is_valid(raise_exception=True)
 
                 user = serializer.validated_data
-                # print(user)
                 student_status = user['student_status']
                 response_data = {}
-                # response_data['user_id'] = user['id']
                 response_data['phone_number'] = user['phone_number']
                 
                 if student_status == 'Existing':
@@ -54,6 +66,7 @@ class StudentloginView(TokenObtainPairView):
     نقطة نهاية تسجيل الدخول المخصصة للطلاب فقط.
     تستخدم StudentTokenObtainPairSerializer للتحقق من الدور وتخصيص التوكن.
     """
+    permission_classes = (AllowAny,)
     serializer_class = StudentloginSerializer
 
 
@@ -62,12 +75,13 @@ class SuperuserLoginView(TokenObtainPairView):
     نقطة نهاية تسجيل الدخول المخصصة للمشرفين فقط.
     تستخدم SuperuserLoginSerializer للتحقق من الدور وتخصيص التوكن.
     """
+    permission_classes = [AllowAny]
     serializer_class = SuperuserLoginSerializer
 
 class TeacherRegistrationView(generics.CreateAPIView):
     
     serializer_class = TeacherRegistrationSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsAdminOrSuperuser]
     def create(self, request, *args, **kwargs):
         with transaction.atomic():
                 try:
@@ -84,7 +98,7 @@ class AdminRegistrationView(generics.CreateAPIView):
 
     
     serializer_class = AdminRegistrationSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsAdminOrSuperuser]
     def create(self, request, *args, **kwargs):
         with transaction.atomic():
                 try:
@@ -103,15 +117,13 @@ class SetPasswordView(APIView):
     تتطلب رقم الهاتف وكلمة المرور الجديدة وتأكيدها.
     بعد التعيين بنجاح، تقوم بإنشاء وإرجاع توكنات JWT للمصادقة.
     """
-
+    permission_classes = [AllowAny]
     def post(self, request, *args, **kwargs):
         """
         يتعامل مع طلبات POST لتعيين كلمة مرور المستخدم.
         """
-        # تهيئة السيريالايزر بالبيانات المرسلة في الطلب
         serializer = SetPasswordSerializer(data=request.data)
 
-        # التحقق من صحة البيانات المرسلة
         if serializer.is_valid():
             try:
                 # استدعاء دالة save() في السيريالايزر، والتي ستقوم بتعيين كلمة المرور
@@ -134,14 +146,13 @@ class BaseLoginAPIView(APIView):
     واجهة برمجة تطبيقات أساسية مشتركة لتسجيل الدخول.
     تستخدم سيريالايزر محدد بواسطة `serializer_class`.
     """
-    serializer_class = None # يجب أن يتم تحديده بواسطة الفئات الفرعية
+    serializer_class = None 
 
     def post(self, request, *args, **kwargs):
         """
         يتعامل مع طلبات POST لتسجيل الدخول باستخدام السيريالايزر المحدد.
         """
         if self.serializer_class is None:
-            # هذا التحقق للتأكد من أن الفئة الفرعية قد حددت serializer_class
             return Response(
                 {"detail": _("خطأ في تكوين الخادم: لم يتم تحديد سيريالايزر.")},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -153,7 +164,6 @@ class BaseLoginAPIView(APIView):
                 response_data = serializer.save()
                 return Response(response_data, status=status.HTTP_200_OK)
             except Exception as e:
-                # التعامل مع أي استثناءات غير متوقعة
                 print(f"خطأ غير متوقع أثناء معالجة طلب تسجيل الدخول: {e}")
                 return Response(
                     {"detail": _("حدث خطأ داخلي أثناء معالجة طلبك. يرجى المحاولة لاحقًا.")},
@@ -167,6 +177,8 @@ class AdminLoginView(BaseLoginAPIView):
     تستخدم AdminLoginSerializer.
     """
     serializer_class = AdminLoginSerializer
+    permission_classes = [AllowAny]
+
 
 
 class TeacherLoginView(BaseLoginAPIView):
@@ -175,6 +187,7 @@ class TeacherLoginView(BaseLoginAPIView):
     تستخدم TeacherLoginSerializer.
     """
     serializer_class = TeacherLoginSerializer
+    permission_classes = [AllowAny]
 
 
 
@@ -200,6 +213,20 @@ class OTPVerifyView(APIView):
         serializer.is_valid(raise_exception=True) 
         response_data = serializer.save() 
         return Response(response_data, status=status.HTTP_200_OK)
+
+class LogoutView(APIView):
+    """
+    واجهة برمجة تطبيقات لتسجيل خروج المستخدم.
+    تتطلب توكن التحديث (refresh token) لوضعه في القائمة السوداء.
+    """
+    permission_classes = (IsAuthenticated,) # تأكد أن المستخدم مسجل الدخول قبل محاولة تسجيل الخروج
+
+    def post(self, request):
+        serializer = LogoutSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        
+        return Response(status=status.HTTP_204_NO_CONTENT) # 204 No Content يدل على نجاح العملية بدون إرجاع محتوى
 
 
 
