@@ -3,7 +3,6 @@ import datetime
 from accounts.models import AutoCreateAndAutoUpdateTimeStampedModel, User
 from django.utils.translation import gettext_lazy as _
 from academic.models import AcademicYear
-
 class Class(AutoCreateAndAutoUpdateTimeStampedModel):
     name = models.CharField(max_length=100,verbose_name=_("اسم الفصل"),)
     description = models.TextField(blank=True,null=True,verbose_name=_("الوصف"))

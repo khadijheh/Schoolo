@@ -2,7 +2,6 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from accounts.models import AutoCreateAndAutoUpdateTimeStampedModel, User
 from classes.models import Class,Section
-from django.utils.translation import gettext_lazy as _
 from teachers.models import Teacher
 from django.core.exceptions import ValidationError
 
@@ -61,10 +60,6 @@ class Subject(AutoCreateAndAutoUpdateTimeStampedModel):
         verbose_name=_("رابط ملف الـ PDF"),
         help_text=_("رابط للمنهج الدراسي أو مواد مساعدة بصيغة PDF.")
     )
-    weekly_sessions = models.IntegerField(
-        verbose_name=_("عدد الحصص الأسبوعية"),
-        help_text=_("عدد الحصص المخصصة لهذه المادة أسبوعياً.")
-    )
 
     class Meta:
         verbose_name = _("مادة دراسية")
@@ -86,7 +81,7 @@ class TeacherSubject(AutoCreateAndAutoUpdateTimeStampedModel):
         verbose_name=_("المعلم")
     )
     subject = models.ForeignKey(
-        Subject, # يشير إلى نموذج Subject من تطبيق subjects
+        Subject, 
         on_delete=models.CASCADE,
         related_name='taught_by_teachers',
         verbose_name=_("المادة الدراسية")
@@ -95,6 +90,7 @@ class TeacherSubject(AutoCreateAndAutoUpdateTimeStampedModel):
         verbose_name=_("الساعات الأسبوعية"),
         help_text=_("عدد الساعات الأسبوعية التي يدرسها المعلم لهذه المادة.")
     )
+
 
     class Meta:
         verbose_name = _("مادة المعلم")
@@ -107,14 +103,34 @@ class TeacherSubject(AutoCreateAndAutoUpdateTimeStampedModel):
     def _str_(self):
         return f"{self.teacher.user.get_full_name()} يدرس {self.subject.name} ({self.weekly_hours} ساعة/أسبوع)"
 
-    def clean(self):
-        from django.core.exceptions import ValidationError
-
-        if self.weekly_hours <= 0:
-            raise ValidationError(
-                _("يجب أن تكون عدد الساعات الأسبوعية أكبر من صفر.")
-            )
-        
-        super().clean()
 
 #####################################################################################
+
+class SectionSubjectRequirement(models.Model):
+    section = models.ForeignKey(
+        Section,
+        on_delete=models.CASCADE,
+        related_name='section_requirements',
+        verbose_name=_("الشعبة") 
+    )
+    subject = models.ForeignKey(
+        Subject,
+        on_delete=models.CASCADE,
+        related_name='subject_requirements',
+        verbose_name=_("المادة") 
+    )
+    
+    weekly_lessons_required = models.IntegerField(
+        help_text=_('عدد الحصص الأسبوعية المطلوبة لهذه المادة في هذه الشعبة'),
+        verbose_name=_("عدد الحصص الأسبوعية المطلوبة") 
+    )
+
+    class Meta:
+        unique_together = ('section', 'subject')
+        verbose_name = _("متطلب حصص الشعبة") 
+        verbose_name_plural = _("متطلبات حصص الشعب")
+
+    def __str__(self):
+        section_name = self.section.name if hasattr(self.section, 'name') else 'N/A'
+        subject_name = self.subject.name if hasattr(self.subject, 'name') else 'N/A'
+        return f"{section_name} - {subject_name}: {self.weekly_lessons_required} {(_('حصص أسبوعياً'))}"

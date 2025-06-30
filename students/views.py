@@ -2,7 +2,7 @@
 
 from django.shortcuts import get_object_or_404
 from rest_framework import generics ,status
-from rest_framework.permissions import IsAdminUser
+from accounts.permissions import *
 from .models import Student 
 from .serializers import PendingStudentApplicationSerializer ,StudentAcceptanceSerializer
 from classes.models import Class
@@ -13,7 +13,7 @@ class PendingStudentList(generics.ListAPIView):
     فقط للمستخدمين الإداريين.
     """
     serializer_class = PendingStudentApplicationSerializer
-    # permission_classes = [IsAdminUser] 
+    permission_classes = [IsAdminOrSuperuser] 
 
     def get_queryset(self):
         queryset = Student.objects.filter(user__is_active=False)
@@ -36,7 +36,7 @@ class PendingStudentList(generics.ListAPIView):
         return queryset
 
 
-from rest_framework.exceptions import NotFound, ValidationError # استيراد NotFound و ValidationError
+from rest_framework.exceptions import  ValidationError 
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from rest_framework.response import Response
@@ -45,7 +45,7 @@ User = get_user_model()
 
 class ApproveStudentAPIView(generics.UpdateAPIView):
     serializer_class = StudentAcceptanceSerializer
-    # permission_classes = [permissions.IsAdminUser] # تأكد من تفعيل هذا
+    permission_classes = [IsAdminOrSuperuser] 
     lookup_field = 'user_id' 
 
     def get_queryset(self):
