@@ -25,3 +25,18 @@ class AcademicTermSerializer(serializers.ModelSerializer):
 
         validated_data['academic_year'] = current_academic_year
         return super().create(validated_data)
+    
+from .models import TimeSlot, DayOfWeek
+
+class TimeSlotSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TimeSlot
+        fields = '__all__' 
+        read_only_fields = ('created_at',) 
+
+class DayOfWeekSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DayOfWeek
+        fields = '__all__' # يشمل جميع الحقول
+        # fields = ['id', 'name_ar', 'name_en', 'is_school_day', 'created_at']
+        read_only_fields = ('created_at',)

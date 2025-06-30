@@ -13,6 +13,7 @@ from django.db import transaction
 from django.contrib.auth.models import Group
 import logging 
 from datetime import timedelta
+from rest_framework.exceptions import AuthenticationFailed
 from django.db.utils import IntegrityError 
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework import serializers
@@ -20,8 +21,10 @@ from .otp import create_and_send_otp , send_otp_sms , generate_otp
 from django.utils import timezone
 from datetime import timedelta
 from rest_framework_simplejwt.tokens import RefreshToken 
+from enrollment.models import RegistrationSetting
 from .tokens import get_tokens_for_user
-User = get_user_model() # جلب موديل المستخدم المخصص
+User = get_user_model()
+
 
 
 logger = logging.getLogger(__name__)
@@ -106,7 +109,6 @@ class StudentloginSerializer(TokenObtainPairSerializer):
 
     def validate(self, attrs):
         data = super().validate(attrs) 
-        
         user = self.user 
 
         if not user.is_active:
@@ -414,10 +416,16 @@ class OTPVerifySerializer(serializers.Serializer):
 
     phone_number = serializers.CharField(max_length=15, required=True, label=_("رقم الهاتف"))
     otp_code = serializers.CharField(max_length=6, required=True, label=_("رمز التحقق"))
-
+    purpose = serializers.ChoiceField(
+        choices=[('phone_verification', _('تأكيد رقم الهاتف')), ('password_reset', _('إعادة تعيين كلمة المرور'))],
+        required=True,
+        label=_("الغرض من التحقق")
+    )
     def validate(self, attrs):
         phone_number = attrs.get('phone_number')
         otp_code = attrs.get('otp_code')
+        purpose = attrs.get('purpose')
+
 
         try:
             user = User.objects.get(phone_number=phone_number)
@@ -425,8 +433,9 @@ class OTPVerifySerializer(serializers.Serializer):
         except User.DoesNotExist:
             raise serializers.ValidationError(_("رقم الهاتف غير مسجل."))
 
-        if user.is_phone_verified: 
-            raise serializers.ValidationError(_("تم تأكيد رقم الهاتف لهذا المستخدم بالفعل."))
+        if purpose == 'phone_verification':
+            if user.is_phone_verified:
+                raise serializers.ValidationError(_("تم تأكيد رقم الهاتف لهذا المستخدم بالفعل."))
 
         try:
             otp_obj = OTP.objects.filter(
@@ -445,6 +454,7 @@ class OTPVerifySerializer(serializers.Serializer):
         with transaction.atomic(): 
             otp_obj = self.otp_obj
             user = self.user
+            purpose = validated_data.get('purpose')
             
             user.is_active=True
             otp_obj.is_verified = True
@@ -452,7 +462,36 @@ class OTPVerifySerializer(serializers.Serializer):
 
             user.is_phone_verified = True
             user.save()
+            if purpose == 'phone_verification':
+                user.is_phone_verified = True
+                user.is_active = True
+                user.save()
+                return {'message': _('تم تأكيد رقم الهاتف بنجاح. يمكنك الآن تسجيل الدخول.')}
 
-            return {'message': _('تم تأكيد رقم الهاتف بنجاح. يمكنك الآن تسجيل الدخول.')}
+            elif purpose == 'password_reset':
+                return {'message': _('تم التحقق من رمز التحقق بنجاح. يمكنك الآن تعيين كلمة مرور جديدة.'), 'user_id': user.id}
+
+class LogoutSerializer(serializers.Serializer):
+    refresh = serializers.CharField(required=True) # يتوقع توكن التحديث
+
+    default_error_messages = {
+        'bad_token': _('توكن التحديث غير صالح أو منتهي الصلاحية.')
+    }
+
+    def validate(self, attrs):
+        self.token = attrs['refresh']
+        return attrs
+
+    def save(self, **kwargs):
+        """
+        يقوم بوضع توكن التحديث في القائمة السوداء.
+        """
+        try:
+            refresh_token = RefreshToken(self.token)
+            refresh_token.blacklist()
+        except Exception as e:
+            
+            raise AuthenticationFailed(self.error_messages['bad_token'], 'bad_token')
         
+        return {'message': _('تم تسجيل الخروج بنجاح.')}
 

@@ -113,7 +113,6 @@ class User(AbstractBaseUser, PermissionsMixin , AutoCreateAndAutoUpdateTimeStamp
         "Does the user have permissions to view the app `app_label`?"
         return self.is_active and self.is_superuser
     
-    # دوال مساعدة لتحديد نوع المستخدم
     def is_student(self):
         return self.groups.filter(name='Student').exists() 
 
@@ -122,6 +121,7 @@ class User(AbstractBaseUser, PermissionsMixin , AutoCreateAndAutoUpdateTimeStamp
 
     def is_admin(self):
         return self.groups.filter(name='Manager').exists() 
+    
     
 class OTP(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='otps')

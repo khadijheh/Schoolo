@@ -42,7 +42,7 @@ def send_sms(phone_number,message):
 
 def send_otp_sms(phone , otp_code):
     """Generates and sends an OTP to the phone number. Returns the OTP if sent successfully."""
-    message = f"كود التحقق الجديد الخاص بك هو: " + otp_code
+    message = f"كود التحقق   الجديد الخاص بك هو: " + otp_code
     try:
         send_sms(phone, message)
         return Response(

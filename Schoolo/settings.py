@@ -26,9 +26,14 @@ SECRET_KEY = 'django-insecure-ic@y*-vpupi+l%yf8_j7jlv@o=)d%9a)6%jt#^6!hitrgu#qg*
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+<<<<<<< HEAD
 ALLOWED_HOSTS = [
    '*'
 ]
+=======
+ALLOWED_HOSTS = ['*']
+
+>>>>>>> bbb457e487e49762f8d22cf46cc7fa1cd623508a
 
 # Application definition
 
@@ -51,10 +56,11 @@ INSTALLED_APPS = [
     'communication',
     'attendance',
     'contents',
-    'enrollment',
+    'enrollment.apps.EnrollmentConfig',
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework.authtoken',
+    'rest_framework_simplejwt.token_blacklist',
 ]
 
 MIDDLEWARE = [
@@ -104,7 +110,7 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),  # صلاحية توكن الوصول (Access Token)
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),  # صلاحية توكن الوصول (Access Token)
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),     # صلاحية توكن التحديث (Refresh Token)
     "ROTATE_REFRESH_TOKENS": False,                  # هل يتم إنشاء Refresh Token جديد عند التحديث؟
     "BLACKLIST_AFTER_ROTATION": False,               # هل يتم حظر Refresh Token القديم بعد التحديث؟
@@ -198,9 +204,3 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
-    ],
-    
-}
