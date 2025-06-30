@@ -2,7 +2,7 @@ from django.shortcuts import render
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
-from .seralizers import *
+from .serializers import *
 import logging
 from rest_framework.exceptions import ValidationError 
 from django.db import transaction
