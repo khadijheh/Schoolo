@@ -81,7 +81,7 @@ class SuperuserLoginView(TokenObtainPairView):
 class TeacherRegistrationView(generics.CreateAPIView):
     
     serializer_class = TeacherRegistrationSerializer
-    permission_classes = [IsAdminOrSuperuser]
+    permission_classes = [AllowAny]
     def create(self, request, *args, **kwargs):
         with transaction.atomic():
                 try:
